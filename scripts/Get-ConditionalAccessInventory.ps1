@@ -10,6 +10,11 @@ if ($Connect) { Connect-MgGraph -Scopes 'Policy.Read.All' -NoWelcome | Out-Null 
 $context = Get-MgContext
 if (-not $context) { throw 'No Graph session. Use -Connect or Connect-MgGraph -Scopes Policy.Read.All.' }
 if (@($context.Scopes) -notcontains 'Policy.Read.All') { throw 'Current Graph session lacks delegated Policy.Read.All.' }
+function Get-CollectionCount {
+    param($Value)
+    if ($null -eq $Value) { return 0 }
+    return @($Value).Count
+}
 # Read-only Graph v1.0 request. No policy write or simulation endpoint is called.
 $policies = @(Get-MgIdentityConditionalAccessPolicy -All)
 $rows = foreach ($policy in $policies) {
@@ -20,21 +25,21 @@ $rows = foreach ($policy in $policies) {
         State = $policy.State
         CreatedDateTimeUtc = if ($policy.CreatedDateTime) { $policy.CreatedDateTime.ToUniversalTime().ToString('o') } else { $null }
         ModifiedDateTimeUtc = if ($policy.ModifiedDateTime) { $policy.ModifiedDateTime.ToUniversalTime().ToString('o') } else { $null }
-        IncludedUserTargetCount = @($users.IncludeUsers).Count
-        ExcludedUserTargetCount = @($users.ExcludeUsers).Count
-        IncludedGroupTargetCount = @($users.IncludeGroups).Count
-        ExcludedGroupTargetCount = @($users.ExcludeGroups).Count
-        IncludedRoleTargetCount = @($users.IncludeRoles).Count
-        ExcludedRoleTargetCount = @($users.ExcludeRoles).Count
+        IncludedUserTargetCount = Get-CollectionCount $users.IncludeUsers
+        ExcludedUserTargetCount = Get-CollectionCount $users.ExcludeUsers
+        IncludedGroupTargetCount = Get-CollectionCount $users.IncludeGroups
+        ExcludedGroupTargetCount = Get-CollectionCount $users.ExcludeGroups
+        IncludedRoleTargetCount = Get-CollectionCount $users.IncludeRoles
+        ExcludedRoleTargetCount = Get-CollectionCount $users.ExcludeRoles
         IncludesAllUsers = @($users.IncludeUsers) -contains 'All'
         IncludesAllApplications = @($apps.IncludeApplications) -contains 'All'
-        IncludedApplicationCount = @($apps.IncludeApplications).Count
-        ExcludedApplicationCount = @($apps.ExcludeApplications).Count
-        IncludedLocationCount = @($locations.IncludeLocations).Count
-        ExcludedLocationCount = @($locations.ExcludeLocations).Count
+        IncludedApplicationCount = Get-CollectionCount $apps.IncludeApplications
+        ExcludedApplicationCount = Get-CollectionCount $apps.ExcludeApplications
+        IncludedLocationCount = Get-CollectionCount $locations.IncludeLocations
+        ExcludedLocationCount = Get-CollectionCount $locations.ExcludeLocations
         ClientAppTypes = @($conditions.ClientAppTypes) -join ';'
-        IncludedPlatformCount = @($platforms.IncludePlatforms).Count
-        ExcludedPlatformCount = @($platforms.ExcludePlatforms).Count
+        IncludedPlatformCount = Get-CollectionCount $platforms.IncludePlatforms
+        ExcludedPlatformCount = Get-CollectionCount $platforms.ExcludePlatforms
         SignInRiskLevels = @($conditions.SignInRiskLevels) -join ';'
         UserRiskLevels = @($conditions.UserRiskLevels) -join ';'
         GrantControls = @($grant.BuiltInControls) -join ';'
